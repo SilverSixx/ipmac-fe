@@ -4,21 +4,16 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
-import { useKeycloak } from '@josempgon/vue-keycloak'
+import { useKeycloak } from '@dsb-norge/vue-keycloak-js'
 import { roles } from '@/constants'
 import { Lock, User, Building2, GraduationCap, UserCircle } from 'lucide-vue-next'
 
 const loading = ref(false)
 const error = ref('')
 const selectedRole = ref('')
-const { keycloak } = useKeycloak()
+const keycloak  = useKeycloak()
 
 const handleKeycloakLogin = async () => {
-  if (!keycloak) {
-    error.value = 'Authentication service not available'
-    return
-  }
-
   if (!selectedRole.value) {
     error.value = 'Please select your role to continue'
     return
@@ -28,9 +23,12 @@ const handleKeycloakLogin = async () => {
   loading.value = true
 
   try {
-    await keycloak.value.login({
-      redirectUri: `${window.location.origin}/${selectedRole.value}`,
-    })
+    await keycloak.login(
+      {
+        redirectUri: `${window.location.origin}/${selectedRole.value}`,
+        prompt: 'none',
+      }
+    )
   } catch (err) {
     console.error('Keycloak login error:', err)
     error.value = 'Login failed. Please try again later.'

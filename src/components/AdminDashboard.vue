@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -11,8 +11,21 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import DashboardHeader from '@/components/ui/DashboardHeader.vue'
+import { endpoints } from '@/api/endpoints'
+import instance from '@/api'
 
 // Component props
 const props = defineProps({
@@ -20,25 +33,80 @@ const props = defineProps({
     type: String,
     default: 'Admin Dashboard',
   },
+  modelValue: String,
+  errors: Object,
 })
 
-// Mock Data - Replace with actual API calls
-const userAccounts = ref([
-  { id: 1, type: 'Trainee', name: 'John Doe', email: 'john.doe@example.com' },
-  {
-    id: 2,
-    type: 'Trainer',
-    name: 'Jane Smith',
-    email: 'jane.smith@example.com',
-  },
-  { id: 3, type: 'Partner', name: 'Acme Corp', email: 'info@acmecorp.com' },
-  {
-    id: 4,
-    type: 'Trainee',
-    name: 'Robert Brown',
-    email: 'robert.brown@example.com',
-  },
-])
+// Define props if needed
+const emit = defineEmits(['user-created', 'update:modelValue', 'update:errors'])
+
+// Form state
+const dialogOpen = ref(false)
+const newUser = ref({
+  username: '',
+  email: '',
+  firstName: '',
+  lastName: '',
+  password: '',
+  role: '',
+})
+
+// Validation state
+const errors = ref({})
+
+const validateForm = () => {
+  const localErrors = {}
+  if (!newUser.value.username) localErrors.username = 'Username is required'
+  if (!newUser.value.email) {
+    localErrors.email = 'Email is required'
+  } else {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(newUser.value.email))
+      localErrors.email = 'Email should be valid'
+  }
+  if (!newUser.value.firstName) localErrors.firstName = 'First name is required'
+  if (!newUser.value.lastName) localErrors.lastName = 'Last name is required'
+  if (!newUser.value.password) localErrors.password = 'Password is required'
+  if (!newUser.value.role) localErrors.role = 'Role is required'
+
+  emit('update:errors', localErrors)
+  return Object.keys(localErrors).length === 0
+}
+
+// Handler for adding new user
+const handleAddNewUser = async () => {
+  if (validateForm()) {
+    try {
+      const response = await instance.post(endpoints.users, newUser.value)
+      emit('user-created', response.data)
+      newUser.value = {
+        username: '',
+        email: '',
+        firstName: '',
+        lastName: '',
+        password: '',
+        role: '',
+      }
+      dialogOpen.value = false
+      const res = await instance.get(endpoints.users)
+      userAccounts.value = res.data
+    } catch (error) {
+      console.error('Error creating user:', error)
+    }
+  }
+}
+
+// User data from API
+const userAccounts = ref([])
+
+onMounted(async () => {
+  try {
+    const response = await instance.get(endpoints.users)
+    userAccounts.value = response.data
+  } catch (error) {
+    console.error('Error fetching users:', error)
+  }
+})
 
 const trainingSessions = ref([
   {
@@ -70,17 +138,14 @@ const trainingSessions = ref([
   },
 ])
 
-// Handlers - Placeholder functions for actions
-const handleAddNewUser = () => {
-  alert('Add New User functionality to be implemented')
-}
-
-const handleEditUser = userId => {
-  alert(`Edit User functionality for user ID: ${userId} to be implemented`)
-}
-
-const handleDeleteUser = userId => {
-  alert(`Delete User functionality for user ID: ${userId} to be implemented`)
+const handleDeleteUser = async userId => {
+  try {
+    await instance.delete(endpoints.users + '/' + userId)
+    const r = await instance.get(endpoints.users)
+    userAccounts.value = r.data
+  } catch (error) {
+    console.error('Error deleting user:', error)
+  }
 }
 
 const handleScheduleNewSession = () => {
@@ -99,14 +164,16 @@ const handleDeleteSession = sessionId => {
   )
 }
 
-const getTypeColor = type => {
-  switch (type) {
-    case 'Trainee':
+const getRoleColor = role => {
+  switch (role) {
+    case 'trainee':
       return 'bg-blue-100 text-blue-800'
-    case 'Trainer':
+    case 'trainer':
       return 'bg-green-100 text-green-800'
-    case 'Partner':
+    case 'partner':
       return 'bg-purple-100 text-purple-800'
+    case 'admin':
+      return 'bg-red-100 text-red-800'
     default:
       return 'bg-gray-100 text-gray-800'
   }
@@ -130,10 +197,7 @@ const userName = ref('Admin User')
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <DashboardHeader
-      :dashboardTitle="dashboardTitle"
-      :userName="userName"
-    />
+    <DashboardHeader :dashboardTitle="dashboardTitle" :userName="userName" />
 
     <main class="container mx-auto px-4 py-6">
       <Tabs defaultValue="users" class="w-full">
@@ -158,27 +222,140 @@ const userName = ref('Admin User')
           <Card class="border-none shadow-md">
             <CardHeader class="bg-gray-50 border-b pb-3">
               <div class="flex justify-between items-center">
-                <CardTitle class="text-lg"></CardTitle>
-                <Button
-                  @click="handleAddNewUser"
-                  class="bg-red-600 hover:bg-red-700"
-                >
-                  <svg
-                    class="mr-2 h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="M12 5v14M5 12h14"></path>
-                  </svg>
-                  Add New User
-                </Button>
+                <Dialog v-model:open="dialogOpen">
+                  <DialogTrigger as-child>
+                    <Button class="bg-red-600 hover:bg-red-700">
+                      <svg
+                        class="mr-2 h-4 w-4"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M12 5v14M5 12h14"></path>
+                      </svg>
+                      Add New User
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create New User</DialogTitle>
+                      <DialogDescription>
+                        Enter the details for the new user account.
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <div class="grid gap-4 py-4">
+                      <div class="grid grid-cols-4 items-center gap-4">
+                        <Label class="text-right">Username</Label>
+                        <Input
+                          v-model="newUser.username"
+                          class="col-span-3"
+                          placeholder="johndoe"
+                        />
+                        <div
+                          v-if="errors.username"
+                          class="col-span-4 text-red-500 text-sm"
+                        >
+                          {{ errors.username }}
+                        </div>
+                      </div>
+
+                      <div class="grid grid-cols-4 items-center gap-4">
+                        <Label class="text-right">Email</Label>
+                        <Input
+                          v-model="newUser.email"
+                          type="email"
+                          class="col-span-3"
+                          placeholder="john.doe@example.com"
+                        />
+                        <div
+                          v-if="errors.email"
+                          class="col-span-4 text-red-500 text-sm"
+                        >
+                          {{ errors.email }}
+                        </div>
+                      </div>
+
+                      <div class="grid grid-cols-4 items-center gap-4">
+                        <Label class="text-right">First Name</Label>
+                        <Input
+                          v-model="newUser.firstName"
+                          class="col-span-3"
+                          placeholder="John"
+                        />
+                        <div
+                          v-if="errors.firstName"
+                          class="col-span-4 text-red-500 text-sm"
+                        >
+                          {{ errors.firstName }}
+                        </div>
+                      </div>
+
+                      <div class="grid grid-cols-4 items-center gap-4">
+                        <Label class="text-right">Last Name</Label>
+                        <Input
+                          v-model="newUser.lastName"
+                          class="col-span-3"
+                          placeholder="Doe"
+                        />
+                        <div
+                          v-if="errors.lastName"
+                          class="col-span-4 text-red-500 text-sm"
+                        >
+                          {{ errors.lastName }}
+                        </div>
+                      </div>
+
+                      <div class="grid grid-cols-4 items-center gap-4">
+                        <Label class="text-right">Password</Label>
+                        <Input
+                          v-model="newUser.password"
+                          type="password"
+                          class="col-span-3"
+                          placeholder="••••••••"
+                        />
+                        <div
+                          v-if="errors.password"
+                          class="col-span-4 text-red-500 text-sm"
+                        >
+                          {{ errors.password }}
+                        </div>
+                      </div>
+
+                      <div class="grid grid-cols-4 items-center gap-4">
+                        <Label class="text-right">Role</Label>
+                        <Input
+                          v-model="newUser.role"
+                          class="col-span-3"
+                          placeholder="admin, trainer, trainee, or partner"
+                        />
+
+                        <div
+                          v-if="errors.role"
+                          class="col-span-4 text-red-500 text-sm"
+                        >
+                          {{ errors.role }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <DialogFooter>
+                      <Button
+                        type="submit"
+                        @click="handleAddNewUser"
+                        class="bg-red-600 hover:bg-red-700"
+                      >
+                        Create User
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardHeader>
             <CardContent class="p-0">
@@ -186,8 +363,9 @@ const userName = ref('Admin User')
                 <Table>
                   <TableBody>
                     <TableRow>
-                      <TableCell class="font-semibold te">Type</TableCell>
+                      <TableCell class="font-semibold">Roles</TableCell>
                       <TableCell class="font-semibold">Name</TableCell>
+                      <TableCell class="font-semibold">Username</TableCell>
                       <TableCell class="font-semibold">Email</TableCell>
                     </TableRow>
                   </TableBody>
@@ -198,15 +376,22 @@ const userName = ref('Admin User')
                       class="hover:bg-gray-50"
                     >
                       <TableCell>
-                        <Badge
-                          :class="getTypeColor(user.type)"
-                          variant="outline"
-                          class="font-medium"
-                        >
-                          {{ user.type }}
-                        </Badge>
+                        <div class="flex gap-1">
+                          <Badge
+                            v-for="role in user.roles"
+                            :key="role"
+                            :class="getRoleColor(role)"
+                            variant="outline"
+                            class="font-medium"
+                          >
+                            {{ role }}
+                          </Badge>
+                        </div>
                       </TableCell>
-                      <TableCell class="font-medium">{{ user.name }}</TableCell>
+                      <TableCell class="font-medium"
+                        >{{ user.firstName }} {{ user.lastName }}</TableCell
+                      >
+                      <TableCell>{{ user.username }}</TableCell>
                       <TableCell>{{ user.email }}</TableCell>
                       <TableCell class="text-right">
                         <DropdownMenu>
@@ -235,31 +420,6 @@ const userName = ref('Admin User')
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              @click="handleEditUser(user.id)"
-                              class="cursor-pointer"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="mr-2"
-                              >
-                                <path
-                                  d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                                ></path>
-                                <path
-                                  d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                                ></path>
-                              </svg>
-                              Edit
-                            </DropdownMenuItem>
                             <DropdownMenuItem
                               @click="handleDeleteUser(user.id)"
                               class="cursor-pointer text-red-600"

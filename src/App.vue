@@ -6,23 +6,18 @@
 
 <script>
 import { defineComponent, computed, onMounted } from 'vue'
-import { useKeycloak } from '@josempgon/vue-keycloak'
+import { useKeycloak } from '@dsb-norge/vue-keycloak-js'
 
 export default defineComponent({
   setup() {
-    const { keycloak, isAuthenticated } = useKeycloak()
+    const { keycloak, isAuthenticated, token } = useKeycloak()
 
     // Log authentication state for debugging
-    onMounted(() => {
-      console.log('App mounted, isAuthenticated:', isAuthenticated.value)
-      console.log('Keycloak status:', keycloak.authenticated)
-      if (isAuthenticated.value) {
-        console.log('Token parsed:', keycloak.tokenParsed)
-      }
+    onMounted(async () => {
+
     })
 
     const username = computed(() => {
-      console.log('Computing username, isAuthenticated:', isAuthenticated.value)
       if (!isAuthenticated.value) return ''
       return (
         keycloak.tokenParsed?.preferred_username ||

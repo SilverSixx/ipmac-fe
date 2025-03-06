@@ -1,6 +1,6 @@
 <script setup>
 import { Button } from '@/components/ui/button'
-import { useKeycloak } from '@josempgon/vue-keycloak'
+import { useKeycloak } from '@dsb-norge/vue-keycloak-js'
 
 defineProps({
   dashboardTitle: {

@@ -10,7 +10,7 @@
     "type-check": "vue-tsc --noEmit -p tsconfig.app.json --composite false"
   },
   "dependencies": {
-    "@josempgon/vue-keycloak": "^3.1.0",
+    "@dsb-norge/vue-keycloak-js": "^3.0.2",
     "@vueuse/core": "^12.7.0",
     "axios": "^1.8.1",
     "class-variance-authority": "^0.7.1",

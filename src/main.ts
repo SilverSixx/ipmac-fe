@@ -3,7 +3,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import routes from './router'
 import './assets/main.css'
-import { vueKeycloak } from '@josempgon/vue-keycloak'
+import VueKeyCloak, { useKeycloak } from '@dsb-norge/vue-keycloak-js'
+import instance from './api'
 
 // Initialize Vue Keycloak before mounting the app
 const router = createRouter({
@@ -12,22 +13,23 @@ const router = createRouter({
 })
 
 const app = createApp(App)
-
-// Use vueKeycloak as a plugin
-app.use(vueKeycloak, async () => {
-  const silentCheckSsoRedirectUri = `${window.location.origin}/assets/silent-check-sso.html`
-  return {
+  .use(router)
+  .use(VueKeyCloak, {
     config: {
       url: import.meta.env.VITE_KEYCLOAK_URL,
       realm: import.meta.env.VITE_KEYCLOAK_REALM,
       clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
     },
-    initOptions: {
-      onLoad: 'check-sso',
-      silentCheckSsoRedirectUri,
+    onReady: keycloak => {
+      instance.interceptors.request.use(
+        config => {
+          config.headers.Authorization = `Bearer ${keycloak.token}`
+          return config
+        },
+        error => {
+          return Promise.reject(error)
+        }
+      )
+      app.mount('#app')
     },
-  }
-})
-
-app.use(router)
-app.mount('#app')
+  })

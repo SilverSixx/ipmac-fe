@@ -5,7 +5,7 @@ import AdminDashboard from '@/components/AdminDashboard.vue'
 import PartnerDashboard from '@/components/PartnerDashboard.vue'
 import TraineeDashboard from '@/components/TraineeDashboard.vue'
 import TrainerDashboard from '@/components/TrainerDashboard.vue'
-import { useKeycloak } from '@josempgon/vue-keycloak'
+import { useKeycloak } from '@dsb-norge/vue-keycloak-js'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -51,15 +51,15 @@ const routes: Array<RouteRecordRaw> = [
 
 export const setupRouterGuard = (router: any) => {
   router.beforeEach(async (to: any, from: any, next: any) => {
-    const { keycloak, isAuthenticated } = useKeycloak()
+    const keycloak = useKeycloak()
 
     if (to.meta.requiresAuth) {
-      if (!isAuthenticated) {
+      if (!keycloak.authenticated) {
         return next({ name: 'login', query: { redirect: to.fullPath } })
       }
 
       // Get roles directly from keycloak instance
-      const userRoles = keycloak.value?.realmAccess?.roles || []
+      const userRoles = keycloak.realmAccess?.roles || []
       const requiredRoles = to.meta.roles || []
 
       // Check if any required role exists in user's roles
