@@ -1,40 +1,48 @@
-# shadcn-vue-example
+# Technical IT Training Center Management System - Frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+Vue.js-based frontend for managing a technical IT training center, implementing role-based dashboards and integration with Keycloak authentication.
 
-## Recommended IDE Setup
+## 📋 Project Overview
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+### Key Features
+- ✅ **Role-Based Interfaces**  
+  Distinct dashboards for Trainees, Trainers, Partners, and Admins
+- ✅ **Authentication Flow**  
+  Keycloak integration for PKCE flow login
+- ✅ **Responsive UI Components**  
+  30+ Shadcn-vue components with Radix-vue primitives
+- ✅ **API Integration**  
+  Axios-based service layer with typed endpoints
+- ✅ **Dockerized Deployment**  
+  Production-ready Nginx configuration
 
-## Type Support for `.vue` Imports in TS
+## 🛠 Technologies Used
+- **Core Framework**: Vue 3 + TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS + CSS Variables
+- **UI Library**: Shadcn-vue
+- **State Management**: Vue Router
+- **API Client**: Axios
+- **Infrastructure**: Docker, Nginx
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
+## 🚀 Getting Started
 
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
+### Prerequisites
+- Node.js 20+
+- Docker 20.10+
+- Keycloak server (matching backend configuration)
 
-1. Disable the built-in TypeScript Extension
-    1) Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-    2) Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
-
-## Project Setup
-
-```sh
+### Installation
+```bash
+git clone https://your-repo/silversixx-ipmac-fe.git
+cd silversixx-ipmac-fe
 npm install
 ```
 
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
+and an .env file and you are good to go.
 ```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-npm run build
+VITE_KEYCLOAK_URL=http://localhost:8080
+VITE_KEYCLOAK_REALM=training-realm
+VITE_KEYCLOAK_CLIENT_ID=training-client
+VITE_API_BASE_URL=http://localhost:8081/api
 ```
